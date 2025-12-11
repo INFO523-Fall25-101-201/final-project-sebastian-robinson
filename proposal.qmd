@@ -108,8 +108,10 @@ for key in keys:
 
 ## Questions
 
-The two questions you want to answer.
+What events influnce LLM strategies
+How does LLM adapt to the changing environment of the game.
 
 ## Analysis plan
 
--   A plan for answering each of the questions including the variables involved, variables to be created (if any), external data to be merged in (if any).
+Utilizing the PlayerSummaries and CityInformation datasets I will analyze when the LLM changes its strategies, how these strategies change over time and what caused them to change their strategy
+I will use the LLM's own recording of its reasoning found in PersonaChanges to validate I have correctly identified a strategy pivot
