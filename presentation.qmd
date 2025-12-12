@@ -300,7 +300,7 @@ Radar Chart:
 :::
 :::
 
-Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
+Cluster 3 occurs during the sudden shift in city cont rol as the LLM begins loosing control of Cities
 We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
 
 # Player 0 Radar Chart Plot
@@ -334,4 +334,14 @@ for idx in range(len(centroids_norm)):
 plt.tight_layout()
 plt.show()
 ```
+# Conclusions
+
+::: {.r-fit-text}
+::::: columns
+
+* This provides an excellent starting space in determining how the LLM's behavior changed over turns and understanding when exactly these changes occured.
+* LLM responses are logged at appropriate turns, while these are all random text responses, using the clustering we can correlate these to ensure they align. For example at the 150 mark we see a response logged that it has in fact changed its strategy.
+* From this I believe a model can be formed to predict how the LLM will perform based on frequency of switching clusters and resources favored  
+:::::
+:::
 
