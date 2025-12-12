@@ -79,39 +79,40 @@ df_players["ActivePlayer"] = df_players.apply(get_active_player, axis=1)
 df_players.head().to_html()
 ```
 
-# Dataset Overview
+## Research Question
 
 ::: columns
+How does a LLM perform against the base AI in Civilization 5?
+
+-   Can the LLM's strategy change be detected
+-   What Cause the change in strategy
+:::
+
+
+## Dataset Overview
+::: {.r-fit-text}
+::: columns
 ::: {.column width="50%"}
+Data:
+
+-   Dataset of one gameplay instance between 1 LLM and 3 in game AI's
+-   This analysis focuses on resources from both players and cities over player turns
 ### PlayerSummaries Columns
 ```{python}
-df_players.columns.tolist()
+cols = df_players.columns.tolist()
+cols[:5] + ["..."] + cols[-5:]
 ```
 :::
 
 ::: {.column width="50%"}
 ### CityInformation Columns
 ```{python}
-df_cities.columns.tolist()
+cols = df_cities.columns.tolist()
+cols[:5] + ["..."] + cols[-5:]
 ```
 :::
-:::
 
 
-# Summary Statistics
-
-```{python}
-metrics = [
-    "Cities", "Population", "Territory",
-    "Gold", "GoldPerTurn",
-    "HappinessPercentage",
-    "SciencePerTurn", "CulturePerTurn",
-    "FaithPerTurn", "TourismPerTurn",
-    "Technologies"
-]
-
-df_players[metrics].describe().to_html()
-```
 # Heatmap Per Player 
 
 ```{python}
