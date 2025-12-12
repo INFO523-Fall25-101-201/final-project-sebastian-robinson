@@ -71,6 +71,7 @@ df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
 df_players["Turn"] = pd.to_numeric(df_players["Turn"], errors="coerce").astype(int)
 
 df_cities["Turn"] = pd.to_numeric(df_cities["Turn"], errors="coerce")
+df_cities = df_cities[df_cities["Owner"] != "City-States"].copy()
 
 city_yields = (
     df_cities.groupby(["Turn", "Owner"])[[
