@@ -15,6 +15,9 @@ editor: visual
 jupyter: python3
 execute:
   echo: false
+  fig-width: 9
+  fig-height: 5
+  fig-dpi: 100
 ---
 
 ```{python}
@@ -106,20 +109,16 @@ city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
 ```
 
 ## Research Question
+::::: columns
 
-DEFAULT TEXT
-
-::: columns
 How does a LLM perform against the base AI in Civilization 5?
 
 -   Can the LLM's strategy change be detected
 -   What causes the change in strategy
 :::
 
+
 ## Dataset Overview
-
-DEFAULT TEXT
-
 ::: {.r-fit-text}
 ::: columns
 ::: {.column width="50%"}
@@ -127,6 +126,8 @@ Data:
 
 -   Dataset of one gameplay instance between 1 LLM and 3 in game AI's
 -   This analysis focuses on resources from both players and cities over player turns
+:::
+::: {.column width="60%"}
 
 ### PlayerSummaries Columns
 ```{python}
@@ -136,18 +137,22 @@ cols[:5] + ["..."] + cols[-5:]
 :::
 
 ::: {.column width="50%"}
+
 ### CityInformation Columns
 ```{python}
 cols = df_cities.columns.tolist()
 cols[:5] + ["..."] + cols[-5:]
 ```
 :::
+:::::
 :::
-:::
+
+## Dataset Overview
+::: {.r-fit-text}
+::: columns
 
 # Combined Heatmap
-
-DEFAULT TEXT
+::: {.r-fit-text}
 
 ```{python}
 merged = pd.merge(
