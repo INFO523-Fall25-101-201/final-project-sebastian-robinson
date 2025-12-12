@@ -20,25 +20,16 @@ execute:
 ```{python}
 #| label: load-packages
 #| include: false
-
-# Load packages here
 import pandas as pd
 import seaborn as sns
 import os
 import glob
 import numpy as np
-import pandas as pd
-import sqlite3
-from scipy import stats
-from pandas.api.types import is_numeric_dtype
-import seaborn as sns
-from sklearn.cluster import KMeans
-from sklearn.discriminant_analysis import StandardScaler
-from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import linkage, dendrogram
-BASE_DIR = os.getcwd()
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
+BASE_DIR = os.getcwd()
 
 metrics = [
     "Cities", "Population", "Territory",
@@ -49,16 +40,8 @@ metrics = [
     "Technologies"
 ]
 
-```
-
-```{python}
-#| label: setup
-#| include: false
-#| 
 sns.set_theme(style="whitegrid")
 sns.set_context("notebook", font_scale=1.1)
-
-import matplotlib.pyplot as plt
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['figure.figsize'] = (6, 6 * 0.618)
@@ -80,14 +63,34 @@ def get_active_player(row):
     for i, col in enumerate(player_cols):
         if col in row and row[col] == 2:
             return i
-    return None
+    return np.nan
 
 df_players["ActivePlayer"] = df_players.apply(get_active_player, axis=1)
+df_players = df_players.dropna(subset=["ActivePlayer"])
+df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
+df_players["Turn"] = pd.to_numeric(df_players["Turn"], errors="coerce").astype(int)
 
-df_players.head().to_html()
+df_cities["Turn"] = pd.to_numeric(df_cities["Turn"], errors="coerce")
+
+city_yields = (
+    df_cities.groupby(["Turn", "Owner"])[[
+        "Population","FoodPerTurn","ProductionPerTurn",
+        "GoldPerTurn","SciencePerTurn","CulturePerTurn",
+        "FaithPerTurn","TourismPerTurn","BuildingCount","WonderCount"
+    ]]
+    .mean()
+    .reset_index()
+)
+
+city_yields = city_yields.rename(columns={"Owner":"OwnerID"})
+city_yields = city_yields.dropna(subset=["OwnerID"])
+city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
+city_yields["Turn"] = pd.to_numeric(city_yields["Turn"], errors="coerce").astype(int)
 ```
 
 ## Research Question
+
+DEFAULT TEXT
 
 ::: columns
 How does a LLM perform against the base AI in Civilization 5?
@@ -95,7 +98,6 @@ How does a LLM perform against the base AI in Civilization 5?
 -   Can the LLM's strategy change be detected
 -   What Cause the change in strategy
 :::
-
 
 ## Dataset Overview
 ::: {.r-fit-text}
@@ -105,6 +107,7 @@ Data:
 
 -   Dataset of one gameplay instance between 1 LLM and 3 in game AI's
 -   This analysis focuses on resources from both players and cities over player turns
+
 ### PlayerSummaries Columns
 ```{python}
 cols = df_players.columns.tolist()
@@ -119,39 +122,14 @@ cols = df_cities.columns.tolist()
 cols[:5] + ["..."] + cols[-5:]
 ```
 :::
+:::
+:::
 
+# Combined Heatmap
 
-
-# Heatmap
+DEFAULT TEXT
 
 ```{python}
-city_yields = (
-    df_cities.groupby(["Turn", "Owner"])[[
-        "Population","FoodPerTurn","ProductionPerTurn",
-        "GoldPerTurn","SciencePerTurn","CulturePerTurn",
-        "FaithPerTurn","TourismPerTurn","BuildingCount","WonderCount"
-    ]]
-    .mean()
-    .reset_index()
-)
-
-city_yields.rename(columns={"Owner":"OwnerID"}, inplace=True)
-
-df_players = df_players.dropna(subset=["ActivePlayer"])
-df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
-city_yields = city_yields.dropna(subset=["OwnerID"])
-city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
-df_players["Turn"] = df_players["Turn"].astype(int)
-city_yields["Turn"] = city_yields["Turn"].astype(int)
-
-
-def plot_heatmap(data, title):
-    corr = data.corr()
-    plt.figure(figsize=(10,8))
-    sns.heatmap(corr, cmap="coolwarm", annot=False)
-    plt.title(title)
-    plt.show()
-
 merged = pd.merge(
     df_players,
     city_yields,
@@ -160,14 +138,12 @@ merged = pd.merge(
     how="left"
 )
 
-
-
-valid_players = sorted(df_players["ActivePlayer"].dropna().unique())
+valid_players = sorted(df_players["ActivePlayer"].unique())
 df_filtered = merged[merged["ActivePlayer"].isin(valid_players)].copy()
 
 df_filtered = df_filtered.drop(
-    columns=[c for c in df_filtered.columns 
-             if c.startswith("Player") 
+    columns=[c for c in df_filtered.columns
+             if c.startswith("Player")
              and int(c.replace("Player","")) not in valid_players],
     errors="ignore"
 )
@@ -180,60 +156,57 @@ for col in ["Turn","ActivePlayer","OwnerID"]:
 
 df_corr = df_filtered[numeric_cols].corr()
 
-plt.figure(figsize=(15,12))
+plt.figure(figsize=(16,13))
 sns.heatmap(df_corr, cmap="coolwarm", annot=False)
 plt.title("Combined Correlation Heatmap — All Players")
 plt.show()
 ```
 
+# Cities Controlled Per Turn
 
-# KMeans Clustering
+DEFAULT TEXT
 
 ```{python}
-clean = df_players[metrics].dropna()
-scaler = StandardScaler()
-X = scaler.fit_transform(clean)
+city_unique = df_cities.drop_duplicates(subset=["Turn", "Name", "Owner"])
 
-kmeans = KMeans(n_clusters=4, n_init=10)
-labels = kmeans.fit_predict(X)
+cities_per_turn = (
+    city_unique.groupby(["Turn", "Owner"])
+               .size()
+               .reset_index(name="CityCount")
+)
 
-plt.figure(figsize=(8,6))
-sns.scatterplot(x=X[:,0], y=X[:,1], hue=labels, palette="tab10")
-plt.title("KMeans Clustering — Player Performance Metrics")
+plt.figure(figsize=(10,6))
+sns.lineplot(data=cities_per_turn, x="Turn", y="CityCount", hue="Owner")
+plt.title("Cities Controlled Per Turn")
+plt.tight_layout()
 plt.show()
 ```
-# Strategy Change Over time
+
+# Player 0 Clustering Timeline
+
+DEFAULT TEXT
 
 ```{python}
-time_metrics = [
-    "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
-    "FaithPerTurn", "TourismPerTurn", "HappinessPercentage"
-]
+clean = df_players.dropna(subset=metrics + ["Turn", "ActivePlayer"]).copy()
 
-def plot_time_comparison(metric):
-    plt.figure(figsize=(10,5))
-    for p in sorted(df_players["ActivePlayer"].dropna().unique()):
-        sub = df_players[df_players["ActivePlayer"] == p]
-        sns.lineplot(
-            data=sub,
-            x="Turn",
-            y=metric,
-            label=f"Player {p}",
-            linewidth=1.7
-        )
-    plt.title(f"{metric} Over Time")
-    plt.xlabel("Turn")
-    plt.ylabel(metric)
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+scaler = StandardScaler()
+X = scaler.fit_transform(clean[metrics])
 
-for m in time_metrics:
-    plot_time_comparison(m)
+kmeans = KMeans(n_clusters=4, n_init=10)
+clean["Cluster"] = kmeans.fit_predict(X)
+
+p0 = clean[clean["ActivePlayer"] == 0].sort_values("Turn")
+
+plt.figure(figsize=(10,6))
+sns.scatterplot(data=p0, x="Turn", y="Cluster", hue="Cluster", palette="tab10")
+plt.title("Player 0 Cluster State Over Time")
+plt.tight_layout()
+plt.show()
 ```
-# Radar Chart of Clusters
 
+# Player 0 Radar Chart
+
+DEFAULT TEXT
 
 ```{python}
 radar_metrics = [
@@ -242,110 +215,26 @@ radar_metrics = [
     "Territory", "Cities"
 ]
 
-player_profiles = (
-    df_players.groupby("ActivePlayer")[radar_metrics]
+p0_profile = (
+    df_players[df_players["ActivePlayer"] == 0][radar_metrics]
     .mean()
-    .dropna()
 )
 
-scaled = StandardScaler().fit_transform(player_profiles)
-player_profiles_norm = pd.DataFrame(
-    scaled,
-    index=player_profiles.index,
-    columns=radar_metrics
-)
+categories = radar_metrics
+N = len(categories)
+values = p0_profile.values.flatten().tolist()
+values += values[:1]
 
-def radar_plot(df, title):
-    categories = list(df.columns)
-    N = len(categories)
-    values = df.values.flatten().tolist()
-    values += values[:1]
+angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+angles += angles[:1]
 
-    angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
-    angles += angles[:1]
-
-    plt.figure(figsize=(6,6))
-    ax = plt.subplot(111, polar=True)
-    ax.plot(angles, values, linewidth=2)
-    ax.fill(angles, values, alpha=0.25)
-    ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(categories)
-    plt.title(title)
-    plt.show()
-
-for p in player_profiles_norm.index:
-    radar_plot(player_profiles_norm.loc[[p]], f"Radar Strategy Profile — Player {p}")
+plt.figure(figsize=(6,6))
+ax = plt.subplot(111, polar=True)
+ax.plot(angles, values, linewidth=2)
+ax.fill(angles, values, alpha=0.25)
+ax.set_xticks(angles[:-1])
+ax.set_xticklabels(categories)
+plt.title("Player 0 Radar Profile")
+plt.show()
 ```
 
-
-## Code
-
-
-# Fit a linear regression model
-
-
-# Summary of the model
-
-```
-
-## Plots
-
-```{python}
-
-```
-
-## Plot and text
-
-::: columns
-::: {.column width="50%"}
--   Some text
-
--   goes here
-:::
-
-::: {.column width="50%"}
-```{python}
-#| warning: false
-#| fig.width: 5.5
-
-```
-:::
-:::
-
-# A new section...
-
-## Tables
-
-If you want to generate a table, make sure it is in the HTML format (instead of Markdown or other formats), e.g.,
-
-
-
-## Images
-
-![Image credit: Danielle Navarro, Percolate.](images/watercolour_sys02_img34_teacup-ocean.png){fig-align="center" width="500"}
-
-## Math Expressions {.smaller}
-
-You can write LaTeX math expressions inside a pair of dollar signs, e.g. \$\\alpha+\\beta\$ renders $\alpha + \beta$. You can use the display style with double dollar signs:
-
-```         
-$$\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i$$
-```
-
-$$
-\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i
-$$
-
-Limitations:
-
-1.  The source code of a LaTeX math expression must be in one line, unless it is inside a pair of double dollar signs, in which case the starting `$$` must appear in the very beginning of a line, followed immediately by a non-space character, and the ending `$$` must be at the end of a line, led by a non-space character;
-
-2.  There should not be spaces after the opening `$` or before the closing `$`.
-
-# Wrap up
-
-## Feeling adventurous?
-
--   You are welcomed to use the default styling of the slides. In fact, that's what I expect majority of you will do. You will differentiate yourself with the content of your presentation.
-
--   But some of you might want to play around with slide styling. Some solutions for this can be found at https://quarto.org/docs/presentations/revealjs.
