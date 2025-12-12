@@ -121,9 +121,28 @@ cols[:5] + ["..."] + cols[-5:]
 :::
 
 
+
 # Heatmap
 
 ```{python}
+city_yields = (
+    df_cities.groupby(["Turn", "Owner"])[[
+        "Population","FoodPerTurn","ProductionPerTurn",
+        "GoldPerTurn","SciencePerTurn","CulturePerTurn",
+        "FaithPerTurn","TourismPerTurn","BuildingCount","WonderCount"
+    ]]
+    .mean()
+    .reset_index()
+)
+
+city_yields.rename(columns={"Owner":"OwnerID"}, inplace=True)
+
+df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
+city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
+df_players["Turn"] = df_players["Turn"].astype(int)
+city_yields["Turn"] = city_yields["Turn"].astype(int)
+
+
 def plot_heatmap(data, title):
     corr = data.corr()
     plt.figure(figsize=(10,8))
@@ -138,6 +157,8 @@ merged = pd.merge(
     right_on=["Turn", "OwnerID"],
     how="left"
 )
+
+
 
 valid_players = sorted(df_players["ActivePlayer"].dropna().unique())
 df_filtered = merged[merged["ActivePlayer"].isin(valid_players)].copy()
