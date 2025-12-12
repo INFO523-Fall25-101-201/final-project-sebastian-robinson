@@ -66,6 +66,16 @@ dfs = {os.path.basename(f): pd.read_csv(f) for f in files}
 df_players = dfs["PlayerSummaries.csv"].copy()
 df_cities  = dfs["CityInformations.csv"].copy()
 
+player_cols = [f"Player{i}" for i in range(22)]
+
+def get_active_player(row):
+    for i, col in enumerate(player_cols):
+        if col in row and row[col] == 2:
+            return i
+    return None
+
+df_players["ActivePlayer"] = df_players.apply(get_active_player, axis=1)
+
 df_players.head().to_html()
 ```
 
