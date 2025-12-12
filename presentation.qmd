@@ -291,13 +291,17 @@ plt.show()
 ```
 
 # Player 0 Radar Chart
-
+::: {.r-fit-text}
+::::: columns
 Radar Chart:
 
--   The radar chart shows what the LLM focused on as its strategy altered
--   We see a very generic approach at the start which then moves into a more focus approach on generating gold and city expansion
--   In cluster 2 we see a complete pivot to a wonder based victory
--   Cluster 3 shows a push towards all except gold generation
+* The radar chart shows what the LLM focused on as its strategy altered
+* We see a very generic approach at the start which then moves into a more focus approach on generating gold and city expansion
+* In cluster 2 we see a complete pivot to a wonder based victory
+* Cluster 3 shows a push towards all except gold generation
+:::::
+:::
+
 Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
 We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
 
