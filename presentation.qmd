@@ -40,6 +40,14 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 BASE_DIR = os.getcwd()
 
 
+metrics = [
+    "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn",
+    "HappinessPercentage",
+    "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn",
+    "Technologies"
+]
 
 ```
 
@@ -113,7 +121,7 @@ cols[:5] + ["..."] + cols[-5:]
 :::
 
 
-# Heatmap Per Player 
+# Heatmap
 
 ```{python}
 def plot_heatmap(data, title):
@@ -123,19 +131,39 @@ def plot_heatmap(data, title):
     plt.title(title)
     plt.show()
 
-players = [0,1,2,3]
+merged = pd.merge(
+    df_players,
+    city_yields,
+    left_on=["Turn", "ActivePlayer"],
+    right_on=["Turn", "OwnerID"],
+    how="left"
+)
 
-for p in players:
-    df_p = df_players[df_players["ActivePlayer"] == p][metrics].dropna()
-    plot_heatmap(df_p, f"Correlation Heatmap — Player {p}")
+valid_players = sorted(df_players["ActivePlayer"].dropna().unique())
+df_filtered = merged[merged["ActivePlayer"].isin(valid_players)].copy()
+
+df_filtered = df_filtered.drop(
+    columns=[c for c in df_filtered.columns 
+             if c.startswith("Player") 
+             and int(c.replace("Player","")) not in valid_players],
+    errors="ignore"
+)
+
+numeric_cols = df_filtered.select_dtypes("number").columns.tolist()
+
+for col in ["Turn","ActivePlayer","OwnerID"]:
+    if col in numeric_cols:
+        numeric_cols.remove(col)
+
+df_corr = df_filtered[numeric_cols].corr()
+
+plt.figure(figsize=(15,12))
+sns.heatmap(df_corr, cmap="coolwarm", annot=False)
+plt.title("Combined Correlation Heatmap — All Players")
+plt.show()
 ```
 
-# Heatmap Comparative
 
-```{python}
-df_normal_ai = df_players[df_players["ActivePlayer"].isin([1,2,3])][metrics].dropna()
-plot_heatmap(df_normal_ai, "Correlation Heatmap — Normal AI Players (1,2,3)")
-```
 # KMeans Clustering
 
 ```{python}
