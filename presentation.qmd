@@ -15,9 +15,6 @@ editor: visual
 jupyter: python3
 execute:
   echo: false
-  fig-width: 9
-  fig-height: 5
-  fig-dpi: 100
 ---
 
 ```{python}
@@ -119,24 +116,22 @@ How does a LLM perform against the base AI in Civilization 5?
 
 
 ## Dataset Overview
-::: {.r-fit-text}
 ::: columns
-::: {.column width="50%"}
-Data:
+::: column
+### About the Dataset
 
--   Dataset of one gameplay instance between 1 LLM and 3 in game AI's
--   This analysis focuses on resources from both players and cities over player turns
+- Dataset of one gameplay instance between 1 LLM and 3 in-game AIs  
+- Analysis focuses on player- and city-level resources over turns  
+- Turn-based summaries are built per player and merged with city yields  
+
 :::
-::: {.column width="60%"}
 
+::: column
 ### PlayerSummaries Columns
 ```{python}
 cols = df_players.columns.tolist()
 cols[:5] + ["..."] + cols[-5:]
 ```
-:::
-
-::: {.column width="50%"}
 
 ### CityInformation Columns
 ```{python}
@@ -144,15 +139,18 @@ cols = df_cities.columns.tolist()
 cols[:5] + ["..."] + cols[-5:]
 ```
 :::
-:::::
 :::
 
-## Dataset Overview
-::: {.r-fit-text}
-::: columns
 
-# Combined Heatmap
-::: {.r-fit-text}
+# Heatmap
+
+HeatMap:
+
+-   To quickly view what each player chose to focus on in their gameplay
+-   _x values are per player metrics
+-   _y values are city level metrics
+-   Similarities between the LLM and in game AI arise in happiness
+-   Likewise we see Player0(LLM) placed a larger focus on their per turn output
 
 ```{python}
 merged = pd.merge(
@@ -191,9 +189,12 @@ plt.title("Correlation Heatmap All Players")
 plt.show()
 ```
 
+
 # Cities Controlled Per Turn
 
-DEFAULT TEXT
+City Control:
+
+-   Over the course of the game we see a significant deviation between Indonesia(Player1) and The Ottomans(Player0/LLM) towards the late game
 
 ```{python}
 city_turn = df_cities.copy()
@@ -216,10 +217,10 @@ plt.tight_layout()
 plt.show()
 ```
 
+
 # Player 0 Clustering Timeline
 
 DEFAULT TEXT
-
 ```{python}
 metrics_cluster = [
     "Cities",
@@ -270,21 +271,9 @@ def cluster_player(df_player, metrics, k=4):
 df_p0 = df_all_players[df_all_players["Player"] == 0].copy()
 df_p0, kmeans_p0, X_scaled_p0 = cluster_player(df_p0, metrics_cluster, k=4)
 
-plt.figure(figsize=(10, 6))
-sns.scatterplot(
-    data=df_p0,
-    x="SciencePerTurn_x",
-    y="GoldPerTurn_x",
-    hue="Cluster",
-    palette="tab10"
-)
-plt.title("Player 0 Clusters: Science vs Gold")
-plt.tight_layout()
-plt.show()
-
 plt.figure(figsize=(12, 4))
 plt.plot(df_p0["Turn"], df_p0["Cluster"], marker="o", linewidth=1)
-plt.title("Behavioral State Timeline – Player 0")
+plt.title("Behavioral State Timeline – LLM Player")
 plt.xlabel("Turn")
 plt.ylabel("Cluster")
 plt.tight_layout()
@@ -293,7 +282,14 @@ plt.show()
 
 # Player 0 Radar Chart
 
-DEFAULT TEXT
+Radar Chart:
+
+-   The radar chart shows what the LLM focused on as its strategy altered
+-   We see a very generic approach at the start which then moves into a more focus approach on generating gold and city expansion
+-   In cluster 2 we see a complete pivot to a wonder based victory
+-   Cluster 3 shows a push towards all except gold generation
+Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
+We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
 
 ```{python}
 centroids = kmeans_p0.cluster_centers_
@@ -324,3 +320,4 @@ for idx in range(len(centroids_norm)):
 plt.tight_layout()
 plt.show()
 ```
+
