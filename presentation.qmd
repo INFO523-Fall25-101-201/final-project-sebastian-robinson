@@ -31,7 +31,7 @@ from sklearn.preprocessing import StandardScaler
 
 BASE_DIR = os.getcwd()
 
-metrics = [
+metrics_player = [
     "Cities", "Population", "Territory",
     "Gold", "GoldPerTurn",
     "HappinessPercentage",
@@ -55,38 +55,54 @@ files = glob.glob(os.path.join(csv_dir, "*.csv"))
 dfs = {os.path.basename(f): pd.read_csv(f) for f in files}
 
 df_players = dfs["PlayerSummaries.csv"].copy()
-df_cities  = dfs["CityInformations.csv"].copy()
+df_cities = dfs["CityInformations.csv"].copy()
 
-player_cols = [f"Player{i}" for i in range(22)]
+player_cols = [f"Player{i}" for i in range(4)]
 
-def get_active_player(row):
+def determine_active_player(row):
     for i, col in enumerate(player_cols):
-        if col in row and row[col] == 2:
+        if row[col] == 2:
             return i
     return np.nan
 
-df_players["ActivePlayer"] = df_players.apply(get_active_player, axis=1)
-df_players = df_players.dropna(subset=["ActivePlayer"])
-df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
-df_players["Turn"] = pd.to_numeric(df_players["Turn"], errors="coerce").astype(int)
+df_players["ActivePlayer"] = df_players.apply(determine_active_player, axis=1)
+df_players = df_players[df_players["ActivePlayer"].isin([0, 1, 2, 3])]
+
+df_players["Turn"] = pd.to_numeric(df_players["Turn"], errors="coerce")
+df_players = df_players.dropna(subset=["Turn"])
+df_players["Turn"] = df_players["Turn"].astype(int)
+
+for m in metrics_player:
+    df_players[m] = pd.to_numeric(df_players[m], errors="coerce")
 
 df_cities["Turn"] = pd.to_numeric(df_cities["Turn"], errors="coerce")
-df_cities = df_cities[df_cities["Owner"] != "City-States"].copy()
+df_cities = df_cities.dropna(subset=["Turn"])
+df_cities["Turn"] = df_cities["Turn"].astype(int)
+
+city_player_cols = [f"Player{i}" for i in range(4)]
+
+def get_city_owner(row):
+    for i, col in enumerate(city_player_cols):
+        if col in row and row[col] == 1:
+            return i
+    return np.nan
+
+df_cities["OwnerID"] = df_cities.apply(get_city_owner, axis=1)
 
 city_yields = (
-    df_cities.groupby(["Turn", "Owner"])[[
-        "Population","FoodPerTurn","ProductionPerTurn",
-        "GoldPerTurn","SciencePerTurn","CulturePerTurn",
-        "FaithPerTurn","TourismPerTurn","BuildingCount","WonderCount"
+    df_cities
+    .groupby(["Turn", "OwnerID"])[[
+        "Population", "FoodPerTurn", "ProductionPerTurn",
+        "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
+        "FaithPerTurn", "TourismPerTurn",
+        "BuildingCount", "WonderCount"
     ]]
     .mean()
     .reset_index()
 )
 
-city_yields = city_yields.rename(columns={"Owner":"OwnerID"})
 city_yields = city_yields.dropna(subset=["OwnerID"])
 city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
-city_yields["Turn"] = pd.to_numeric(city_yields["Turn"], errors="coerce").astype(int)
 ```
 
 ## Research Question
@@ -97,10 +113,13 @@ DEFAULT TEXT
 How does a LLM perform against the base AI in Civilization 5?
 
 -   Can the LLM's strategy change be detected
--   What Cause the change in strategy
+-   What causes the change in strategy
 :::
 
 ## Dataset Overview
+
+DEFAULT TEXT
+
 ::: {.r-fit-text}
 ::: columns
 ::: {.column width="50%"}
@@ -139,27 +158,31 @@ merged = pd.merge(
     how="left"
 )
 
-valid_players = sorted(df_players["ActivePlayer"].unique())
+valid_players = sorted(df_players["ActivePlayer"].dropna().unique())
 df_filtered = merged[merged["ActivePlayer"].isin(valid_players)].copy()
 
-df_filtered = df_filtered.drop(
-    columns=[c for c in df_filtered.columns
-             if c.startswith("Player")
-             and int(c.replace("Player","")) not in valid_players],
-    errors="ignore"
-)
+cols_to_drop = [
+    c for c in df_filtered.columns 
+    if c.startswith("Player") and int(c.replace("Player", "")) not in valid_players
+]
+df_filtered = df_filtered.drop(columns=cols_to_drop)
 
-numeric_cols = df_filtered.select_dtypes("number").columns.tolist()
+keep_cols = [
+    "Player0", "Player1", "Player2", "Player3", "Turn",
+    "Score", "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn_x", "HappinessPercentage",
+    "SciencePerTurn_x", "CulturePerTurn_x", "FaithPerTurn",
+    "TourismPerTurn", "Technologies",
+    "FoodPerTurn", "ProductionPerTurn", "GoldPerTurn_y",
+    "SciencePerTurn_y", "CulturePerTurn_y", "FaithPerTurn_y",
+    "TourismPerTurn_y", "BuildingCount", "WonderCount"
+]
 
-for col in ["Turn","ActivePlayer","OwnerID"]:
-    if col in numeric_cols:
-        numeric_cols.remove(col)
+df_corr = df_filtered[[c for c in keep_cols if c in df_filtered.columns]].select_dtypes("number").corr()
 
-df_corr = df_filtered[numeric_cols].corr()
-
-plt.figure(figsize=(16,13))
+plt.figure(figsize=(15, 12))
 sns.heatmap(df_corr, cmap="coolwarm", annot=False)
-plt.title("Combined Correlation Heatmap — All Players")
+plt.title("Correlation Heatmap All Players")
 plt.show()
 ```
 
@@ -168,7 +191,12 @@ plt.show()
 DEFAULT TEXT
 
 ```{python}
-city_unique = df_cities.drop_duplicates(subset=["Turn", "Name", "Owner"])
+city_turn = df_cities.copy()
+city_turn["Turn"] = pd.to_numeric(city_turn["Turn"], errors="coerce")
+city_turn = city_turn.dropna(subset=["Turn"])
+city_turn["Turn"] = city_turn["Turn"].astype(int)
+
+city_unique = city_turn.drop_duplicates(subset=["Turn", "Name", "Owner"])
 
 cities_per_turn = (
     city_unique.groupby(["Turn", "Owner"])
@@ -176,7 +204,7 @@ cities_per_turn = (
                .reset_index(name="CityCount")
 )
 
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(10, 6))
 sns.lineplot(data=cities_per_turn, x="Turn", y="CityCount", hue="Owner")
 plt.title("Cities Controlled Per Turn")
 plt.tight_layout()
@@ -188,19 +216,72 @@ plt.show()
 DEFAULT TEXT
 
 ```{python}
-clean = df_players.dropna(subset=metrics + ["Turn", "ActivePlayer"]).copy()
+metrics_cluster = [
+    "Cities",
+    "Population_x",
+    "Territory",
+    "GoldPerTurn_x",
+    "SciencePerTurn_x",
+    "CulturePerTurn_x",
+    "FaithPerTurn_x",
+    "FoodPerTurn",
+    "ProductionPerTurn",
+    "GoldPerTurn_y",
+    "SciencePerTurn_y",
+    "CulturePerTurn_y",
+    "FaithPerTurn_y",
+    "TourismPerTurn_y",
+    "BuildingCount",
+    "WonderCount"
+]
 
-scaler = StandardScaler()
-X = scaler.fit_transform(clean[metrics])
+def build_player_turn_table(player_id, merged_df, metrics):
+    df_p = merged_df[merged_df["ActivePlayer"] == player_id].copy()
+    existing = [m for m in metrics if m in df_p.columns]
+    df_turn = (
+        df_p.groupby("Turn")[existing]
+            .mean()
+            .reset_index()
+    )
+    df_turn["Player"] = player_id
+    df_turn = df_turn.fillna(0)
+    return df_turn
 
-kmeans = KMeans(n_clusters=4, n_init=10)
-clean["Cluster"] = kmeans.fit_predict(X)
+player_tables = []
+for p in [0, 1, 2, 3]:
+    df_player = build_player_turn_table(p, merged, metrics_cluster)
+    player_tables.append(df_player)
 
-p0 = clean[clean["ActivePlayer"] == 0].sort_values("Turn")
+df_all_players = pd.concat(player_tables, ignore_index=True)
 
-plt.figure(figsize=(10,6))
-sns.scatterplot(data=p0, x="Turn", y="Cluster", hue="Cluster", palette="tab10")
-plt.title("Player 0 Cluster State Over Time")
+def cluster_player(df_player, metrics, k=4):
+    X = df_player[metrics].values
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    kmeans = KMeans(n_clusters=k, n_init=20, random_state=42)
+    df_player["Cluster"] = kmeans.fit_predict(X_scaled)
+    return df_player, kmeans, X_scaled
+
+df_p0 = df_all_players[df_all_players["Player"] == 0].copy()
+df_p0, kmeans_p0, X_scaled_p0 = cluster_player(df_p0, metrics_cluster, k=4)
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(
+    data=df_p0,
+    x="SciencePerTurn_x",
+    y="GoldPerTurn_x",
+    hue="Cluster",
+    palette="tab10"
+)
+plt.title("Player 0 Clusters: Science vs Gold")
+plt.tight_layout()
+plt.show()
+
+plt.figure(figsize=(12, 4))
+plt.plot(df_p0["Turn"], df_p0["Cluster"], marker="o", linewidth=1)
+plt.title("Behavioral State Timeline – Player 0")
+plt.xlabel("Turn")
+plt.ylabel("Cluster")
 plt.tight_layout()
 plt.show()
 ```
@@ -210,32 +291,31 @@ plt.show()
 DEFAULT TEXT
 
 ```{python}
-radar_metrics = [
-    "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
-    "FaithPerTurn", "TourismPerTurn", "Population",
-    "Territory", "Cities"
-]
+centroids = kmeans_p0.cluster_centers_
+centroids_df = pd.DataFrame(centroids, columns=metrics_cluster)
 
-p0_profile = (
-    df_players[df_players["ActivePlayer"] == 0][radar_metrics]
-    .mean()
-)
+centroids_norm = (centroids_df - centroids_df.min()) / (centroids_df.max() - centroids_df.min())
 
-categories = radar_metrics
+categories = list(centroids_norm.columns)
 N = len(categories)
-values = p0_profile.values.flatten().tolist()
-values += values[:1]
 
 angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
 angles += angles[:1]
 
-plt.figure(figsize=(6,6))
-ax = plt.subplot(111, polar=True)
-ax.plot(angles, values, linewidth=2)
-ax.fill(angles, values, alpha=0.25)
-ax.set_xticks(angles[:-1])
-ax.set_xticklabels(categories)
-plt.title("Player 0 Radar Profile")
+plt.figure(figsize=(10, 10))
+plt.suptitle("Player 0 – Cluster Profiles (Radar Chart)", fontsize=16)
+
+for idx in range(len(centroids_norm)):
+    values = centroids_norm.iloc[idx].tolist()
+    values += values[:1]
+    ax = plt.subplot(2, 2, idx + 1, polar=True)
+    ax.plot(angles, values, linewidth=2, label=f"Cluster {idx}")
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_title(f"Cluster {idx}", size=14)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=8)
+    ax.set_yticklabels([])
+
+plt.tight_layout()
 plt.show()
 ```
-
