@@ -161,6 +161,8 @@ HeatMap:
 -   Similarities between the LLM and in game AI arise in happiness
 -   Likewise we see Player0(LLM) placed a larger focus on their per turn output
 
+# Heatmap Plot
+
 ```{python}
 merged = pd.merge(
     df_players,
@@ -201,10 +203,6 @@ plt.show()
 
 
 # Cities Controlled Per Turn
-
-City Control:
-
--   Over the course of the game we see a significant deviation between Indonesia(Player1) and The Ottomans(Player0/LLM) towards the late game
 
 ```{python}
 city_turn = df_cities.copy()
@@ -292,18 +290,20 @@ plt.show()
 
 # Player 0 Radar Chart
 ::: {.r-fit-text}
-::::: columns
+::: columns
 Radar Chart:
 
 * The radar chart shows what the LLM focused on as its strategy altered
 * We see a very generic approach at the start which then moves into a more focus approach on generating gold and city expansion
 * In cluster 2 we see a complete pivot to a wonder based victory
 * Cluster 3 shows a push towards all except gold generation
-:::::
+:::
 :::
 
 Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
 We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
+
+# Player 0 Radar Chart Plot
 
 ```{python}
 centroids = kmeans_p0.cluster_centers_
