@@ -239,7 +239,6 @@ for p in player_profiles_norm.index:
 ## Plots
 
 ```{python}
-penguins['species'] = penguins['species'].apply(lambda x: "Adelie" if x == "Adelie" else "Other")
 
 ```
 
