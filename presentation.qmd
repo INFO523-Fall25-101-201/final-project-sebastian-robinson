@@ -16,6 +16,12 @@ jupyter: python3
 execute:
   echo: false
 ---
+<style>
+.reveal h1 { font-size: 1.7em !important; }
+.reveal h2 { font-size: 1.4em !important; }
+.reveal h3 { font-size: 1.2em !important; }
+code { font-size: 0.7em; }
+</style>
 
 ```{python}
 #| label: load-packages
@@ -30,6 +36,9 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 BASE_DIR = os.getcwd()
+sns.set_theme(style="whitegrid")
+sns.set_context("notebook", font_scale=1.0)
+plt.rcParams['figure.dpi'] = 300
 
 metrics_player = [
     "Cities", "Population", "Territory",
@@ -183,9 +192,10 @@ keep_cols = [
 
 df_corr = df_filtered[[c for c in keep_cols if c in df_filtered.columns]].select_dtypes("number").corr()
 
-plt.figure(figsize=(15, 12))
+plt.figure(figsize=(8, 6))
 sns.heatmap(df_corr, cmap="coolwarm", annot=False)
 plt.title("Correlation Heatmap All Players")
+plt.tight_layout()
 plt.show()
 ```
 
@@ -271,7 +281,7 @@ def cluster_player(df_player, metrics, k=4):
 df_p0 = df_all_players[df_all_players["Player"] == 0].copy()
 df_p0, kmeans_p0, X_scaled_p0 = cluster_player(df_p0, metrics_cluster, k=4)
 
-plt.figure(figsize=(12, 4))
+plt.figure(figsize=(9, 4))
 plt.plot(df_p0["Turn"], df_p0["Cluster"], marker="o", linewidth=1)
 plt.title("Behavioral State Timeline – LLM Player")
 plt.xlabel("Turn")
