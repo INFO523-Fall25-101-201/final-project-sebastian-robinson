@@ -69,33 +69,152 @@ df_cities  = dfs["CityInformations.csv"].copy()
 df_players.head().to_html()
 ```
 
-# Using Quarto for presentations
-
-## Quarto
-
--   The presentation is created using the Quarto CLI
-
--   `##` sets the start of a new slide
-
-## Layouts
-
-You can use plain text
+# Dataset Overview
 
 ::: columns
-::: {.column width="40%"}
--   or bullet points[^1]
+::: {.column width="50%"}
+### PlayerSummaries Columns
+```{python}
+df_players.columns.tolist()
+```
 :::
 
-::: {.column width="60%"}
-or in two columns
+::: {.column width="50%"}
+### CityInformation Columns
+```{python}
+df_cities.columns.tolist()
+```
 :::
 :::
 
-[^1]: And add footnotes
 
--   like
+# Summary Statistics
 
--   this
+```{python}
+metrics = [
+    "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn",
+    "HappinessPercentage",
+    "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn",
+    "Technologies"
+]
+
+df_players[metrics].describe().to_html()
+```
+# Heatmap Per Player 
+
+```{python}
+def plot_heatmap(data, title):
+    corr = data.corr()
+    plt.figure(figsize=(10,8))
+    sns.heatmap(corr, cmap="coolwarm", annot=False)
+    plt.title(title)
+    plt.show()
+
+players = [0,1,2,3]
+
+for p in players:
+    df_p = df_players[df_players["ActivePlayer"] == p][metrics].dropna()
+    plot_heatmap(df_p, f"Correlation Heatmap — Player {p}")
+```
+
+# Heatmap Comparative
+
+```{python}
+df_normal_ai = df_players[df_players["ActivePlayer"].isin([1,2,3])][metrics].dropna()
+plot_heatmap(df_normal_ai, "Correlation Heatmap — Normal AI Players (1,2,3)")
+```
+# KMeans Clustering
+
+```{python}
+clean = df_players[metrics].dropna()
+scaler = StandardScaler()
+X = scaler.fit_transform(clean)
+
+kmeans = KMeans(n_clusters=4, n_init=10)
+labels = kmeans.fit_predict(X)
+
+plt.figure(figsize=(8,6))
+sns.scatterplot(x=X[:,0], y=X[:,1], hue=labels, palette="tab10")
+plt.title("KMeans Clustering — Player Performance Metrics")
+plt.show()
+```
+# Strategy Change Over time
+
+```{python}
+time_metrics = [
+    "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn", "HappinessPercentage"
+]
+
+def plot_time_comparison(metric):
+    plt.figure(figsize=(10,5))
+    for p in sorted(df_players["ActivePlayer"].dropna().unique()):
+        sub = df_players[df_players["ActivePlayer"] == p]
+        sns.lineplot(
+            data=sub,
+            x="Turn",
+            y=metric,
+            label=f"Player {p}",
+            linewidth=1.7
+        )
+    plt.title(f"{metric} Over Time")
+    plt.xlabel("Turn")
+    plt.ylabel(metric)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+for m in time_metrics:
+    plot_time_comparison(m)
+```
+# Radar Chart of Clusters
+
+
+```{python}
+radar_metrics = [
+    "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn", "Population",
+    "Territory", "Cities"
+]
+
+player_profiles = (
+    df_players.groupby("ActivePlayer")[radar_metrics]
+    .mean()
+    .dropna()
+)
+
+scaled = StandardScaler().fit_transform(player_profiles)
+player_profiles_norm = pd.DataFrame(
+    scaled,
+    index=player_profiles.index,
+    columns=radar_metrics
+)
+
+def radar_plot(df, title):
+    categories = list(df.columns)
+    N = len(categories)
+    values = df.values.flatten().tolist()
+    values += values[:1]
+
+    angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
+    angles += angles[:1]
+
+    plt.figure(figsize=(6,6))
+    ax = plt.subplot(111, polar=True)
+    ax.plot(angles, values, linewidth=2)
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories)
+    plt.title(title)
+    plt.show()
+
+for p in player_profiles_norm.index:
+    radar_plot(player_profiles_norm.loc[[p]], f"Radar Strategy Profile — Player {p}")
+```
+
 
 ## Code
 
@@ -105,9 +224,7 @@ import statsmodels.api as sm
 import pandas as pd
 
 # Fit a linear regression model
-X = mtcars[['speed']]
-y = mtcars['mpg']
-model = LinearRegression().fit(X, y)
+
 
 # Summary of the model
 X2 = sm.add_constant(X)
