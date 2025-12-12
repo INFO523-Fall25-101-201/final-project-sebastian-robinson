@@ -137,10 +137,10 @@ city_yields = (
 
 city_yields.rename(columns={"Owner":"OwnerID"}, inplace=True)
 
-df_players["ActivePlayer"] = df_players["ActivePlayer"].astype(int)
-city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
-df_players["Turn"] = df_players["Turn"].astype(int)
-city_yields["Turn"] = city_yields["Turn"].astype(int)
+df_players["ActivePlayer"] = df_players["ActivePlayer"]
+city_yields["OwnerID"] = city_yields["OwnerID"]
+df_players["Turn"] = df_players["Turn"]
+city_yields["Turn"] = city_yields["Turn"]
 
 
 def plot_heatmap(data, title):
