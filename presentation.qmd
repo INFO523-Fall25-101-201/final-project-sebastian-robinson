@@ -228,7 +228,7 @@ plt.show()
 
 # Player 0 Clustering Timeline
 
-DEFAULT TEXT
+
 ```{python}
 metrics_cluster = [
     "Cities",
@@ -300,7 +300,7 @@ Radar Chart:
 :::
 :::
 
-Cluster 3 occurs during the sudden shift in city cont rol as the LLM begins loosing control of Cities
+Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
 We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
 
 # Player 0 Radar Chart Plot
