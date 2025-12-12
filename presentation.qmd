@@ -1,7 +1,7 @@
 ---
-title: "Project title"
-subtitle: "INFO 523 - Summer 2025 - Final Project"
-author: "Author names"
+title: "LLM AI vs in game AI Performance"
+subtitle: "INFO 523 - Fall 2025 - Final Project"
+author: "Sebastian Robinson"
 title-slide-attributes:
   data-background-image: images/watercolour_sys02_img34_teacup-ocean.jpg
   data-background-size: stretch
@@ -24,6 +24,22 @@ execute:
 # Load packages here
 import pandas as pd
 import seaborn as sns
+import os
+import glob
+import numpy as np
+import pandas as pd
+import sqlite3
+from scipy import stats
+from pandas.api.types import is_numeric_dtype
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.discriminant_analysis import StandardScaler
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import linkage, dendrogram
+BASE_DIR = os.getcwd()
+
+
 
 ```
 
@@ -31,7 +47,6 @@ import seaborn as sns
 #| label: setup
 #| include: false
 #| 
-# Set up plot theme and figure resolution
 sns.set_theme(style="whitegrid")
 sns.set_context("notebook", font_scale=1.1)
 
@@ -44,11 +59,14 @@ plt.rcParams['figure.figsize'] = (6, 6 * 0.618)
 ```{python}
 #| label: load-data
 #| include: false
-# Load data in Python
-mtcars = sns.load_dataset('mpg').dropna()  # mtcars dataset is similar to the mpg dataset from seaborn
-mtcars['speed'] = mtcars['horsepower'] / mtcars['weight']
+csv_dir = os.path.join(BASE_DIR, "data", "csv_exports")
+files = glob.glob(os.path.join(csv_dir, "*.csv"))
+dfs = {os.path.basename(f): pd.read_csv(f) for f in files}
 
-penguins = sns.load_dataset('penguins').dropna()
+df_players = dfs["PlayerSummaries.csv"].copy()
+df_cities  = dfs["CityInformations.csv"].copy()
+
+df_players.head().to_html()
 ```
 
 # Using Quarto for presentations

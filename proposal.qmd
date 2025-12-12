@@ -31,80 +31,43 @@ import numpy as np
 #| label: load-dataset
 #| message: false
 ```
+import os
 import glob
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import sqlite3
 from scipy import stats
 from pandas.api.types import is_numeric_dtype
-import os
+import seaborn as sns
+from sklearn.cluster import KMeans
+from sklearn.discriminant_analysis import StandardScaler
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import linkage, dendrogram
 
-#Load db file
-#db is too large to upload, uploading parsed CSV's instead
-#db_path = "/workspaces/final-project-sebastian-robinson/data/02b369b7-c039-4c04-8221-09bd8871b5df_1761658779643.db"  
-output_dir = "csv_exports"
+
+output_dir = os.path.join(BASE_DIR, "data", "csv_exports")
+
+files = glob.glob(os.path.join(output_dir, "*.csv"))
+
 dfs = {}
-#moved file build up to stop rebuilding files each time
-files = glob.glob('*.csv', recursive=True)
-
-
-#enhanced file name pull with Ai (ChatGPT5)
-#Now will look in specified directory without appending directory to name
-#giving only CSV file name
-#os walk probably easier but cool to learn about glob
-#checks names specifically, breaks when used with dfs
-file_name_check = [os.path.basename(f) for f in glob.glob(os.path.join(output_dir, "**/*.csv"), recursive=True)]
-print(files)
-
-
-print(files)
-
-#make a folder, dont yell at me if its already there please
-os.makedirs(output_dir, exist_ok=True)
-conn = sqlite3.connect(db_path)
-
-tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
-tables = [t[0] for t in tables]
-#debug print found tables
-# print("Tables found:", tables)
-
-#change to CSV
-
-for table in tables:
-
-    csv_name = f"{table}.csv"
-    print(f"{csv_name}")
-
-    if csv_name in file_name_check:
-        print(f" Skipping {table} — already exported.") 
-        continue
-
-
-    df = pd.read_sql_query(f"SELECT * FROM {table}", conn) 
-
-    csv_path = os.path.join(output_dir, f"{table}.csv")
-    df.to_csv(csv_path, index=False)
-    print(f"Exported {table} to {csv_path}")
-
-#close connection
-conn.close()
-
-#load files into df and read out head of each
-print(f"files found {files}")
 
 for file in files:
-    name = file
-    dfs[name] = pd.read_csv(file)
-    print(f"Loaded {name} ({len(dfs[name])} rows)")
+    key = os.path.basename(file)        
+    dfs[key] = pd.read_csv(file)
+    print(f"Loaded {key} ({len(dfs[key])} rows)")
 
-keys = dfs.keys()
+keys = list(dfs.keys())
+
+print("\nKeys in dfs:")
+print(keys)
 
 for key in keys:
-    print(f"\nHead and info of Key {key}")
-    print(f"{dfs[key].head()}\n")
-    print(f"{dfs[key].info()}")
+    print(f"\n---- {key} ----")
+    print(dfs[key].head(), "\n")
+    dfs[key].info()
 
+print("\n")
 
 ## Questions
 
