@@ -8,7 +8,7 @@ author:
 description: "Project description"
 format:
   html:
-    code-tools: true
+    code-tools: false
     code-overflow: wrap
     code-line-numbers: true
     embed-resources: true
