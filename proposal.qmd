@@ -35,6 +35,7 @@ from sklearn.discriminant_analysis import StandardScaler
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
+BASE_DIR = os.getcwd()
 ```
 
 ## Dataset
