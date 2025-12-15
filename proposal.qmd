@@ -62,9 +62,6 @@ keys = list(dfs.keys())
 
 
 
-for key in keys:
-
-    dfs[key].info()
 
 
 
