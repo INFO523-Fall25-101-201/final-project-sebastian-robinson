@@ -12,8 +12,8 @@ format:
     code-overflow: wrap
     code-line-numbers: true
     embed-resources: true
-editor: visual
-code-annotations: hover
+editor: source
+code-annotations: false
 execute:
   echo: false
   results: hide
