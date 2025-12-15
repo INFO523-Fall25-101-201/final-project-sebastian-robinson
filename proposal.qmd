@@ -15,8 +15,11 @@ format:
 editor: visual
 code-annotations: hover
 execute:
+  echo: false
+  results: hide
   warning: false
-jupyter: python3
+  message: false
+
 ---
 
 ```{python}
