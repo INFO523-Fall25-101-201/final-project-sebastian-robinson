@@ -22,15 +22,6 @@ jupyter: python3
 ```{python}
 #| label: load-pkgs
 #| message: false
-import numpy as np
-```
-
-## Dataset
-
-```{python}
-#| label: load-dataset
-#| message: false
-```
 import os
 import glob
 import numpy as np
@@ -44,7 +35,14 @@ from sklearn.discriminant_analysis import StandardScaler
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
+```
 
+## Dataset
+
+```{python}
+#| label: load-dataset
+#| message: false
+# Folder where all CSVs live
 
 output_dir = os.path.join(BASE_DIR, "data", "csv_exports")
 
@@ -69,6 +67,70 @@ for key in keys:
 
 print("\n")
 
+
+
+
+
+# load data
+df_playerSummaries = dfs["PlayerSummaries.csv"].copy()
+df_cityInformation = dfs["CityInformations.csv"].copy()
+
+
+# get players
+
+player_cols = [f"Player{i}" for i in range(6)]
+
+def determine_active_player(row):
+    for i, col in enumerate(player_cols):
+        if row[col] == 2:
+            return i
+    return None
+
+df_playerSummaries["ActivePlayer"] = df_playerSummaries.apply(determine_active_player, axis=1)
+
+# Only 4 players
+df_playerSummaries = df_playerSummaries[df_playerSummaries["ActivePlayer"].isin([0, 1, 2, 3])]
+
+
+# initial EDA on specific metrics vs turn
+
+metrics = [
+    "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn",
+    "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn",
+    "Technologies"
+]
+
+# Ensure numeric
+for m in metrics:
+    df_playerSummaries[m] = pd.to_numeric(df_playerSummaries[m], errors="coerce")
+
+def plot_metric(df, metric, use_scatter=False):
+    plt.figure(figsize=(10, 5))
+    
+    for player in sorted(df["ActivePlayer"].unique()):
+        sub = df[df["ActivePlayer"] == player]
+        x = sub["Turn"]
+        y = sub[metric]
+
+        if use_scatter:
+            plt.scatter(x, y, s=10, alpha=0.7, label=f"Player {player}")
+        else:
+            plt.plot(x, y, label=f"Player {player}")
+    
+    plt.title(f"{metric} vs Turn")
+    plt.xlabel("Turn")
+    plt.ylabel(metric)
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.4)
+    plt.tight_layout()
+    plt.show()
+
+for metric in metrics:
+    plot_metric(df_playerSummaries, metric, use_scatter=False)
+
+```
 ## Questions
 
 What events influnce LLM strategies
