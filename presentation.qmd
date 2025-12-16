@@ -1,7 +1,7 @@
 ---
-title: "Project title"
-subtitle: "INFO 523 - Summer 2025 - Final Project"
-author: "Author names"
+title: "LLM AI vs in game AI Performance"
+subtitle: "INFO 523 - Fall 2025 - Final Project"
+author: "Sebastian Robinson"
 title-slide-attributes:
   data-background-image: images/watercolour_sys02_img34_teacup-ocean.jpg
   data-background-size: stretch
@@ -16,26 +16,41 @@ jupyter: python3
 execute:
   echo: false
 ---
+<style>
+.reveal h1 { font-size: 1.7em !important; }
+.reveal h2 { font-size: 1.4em !important; }
+.reveal h3 { font-size: 1.2em !important; }
+code { font-size: 0.7em; }
+</style>
 
 ```{python}
 #| label: load-packages
 #| include: false
-
-# Load packages here
 import pandas as pd
 import seaborn as sns
+import os
+import glob
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
-```
+BASE_DIR = os.getcwd()
+sns.set_theme(style="whitegrid")
+sns.set_context("notebook", font_scale=1.0)
+plt.rcParams['figure.dpi'] = 300
 
-```{python}
-#| label: setup
-#| include: false
-#| 
-# Set up plot theme and figure resolution
+metrics_player = [
+    "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn",
+    "HappinessPercentage",
+    "SciencePerTurn", "CulturePerTurn",
+    "FaithPerTurn", "TourismPerTurn",
+    "Technologies"
+]
+
 sns.set_theme(style="whitegrid")
 sns.set_context("notebook", font_scale=1.1)
-
-import matplotlib.pyplot as plt
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['figure.figsize'] = (6, 6 * 0.618)
@@ -44,124 +59,289 @@ plt.rcParams['figure.figsize'] = (6, 6 * 0.618)
 ```{python}
 #| label: load-data
 #| include: false
-# Load data in Python
-mtcars = sns.load_dataset('mpg').dropna()  # mtcars dataset is similar to the mpg dataset from seaborn
-mtcars['speed'] = mtcars['horsepower'] / mtcars['weight']
+csv_dir = os.path.join(BASE_DIR, "data", "csv_exports")
+files = glob.glob(os.path.join(csv_dir, "*.csv"))
+dfs = {os.path.basename(f): pd.read_csv(f) for f in files}
 
-penguins = sns.load_dataset('penguins').dropna()
+df_players = dfs["PlayerSummaries.csv"].copy()
+df_cities = dfs["CityInformations.csv"].copy()
+
+player_cols = [f"Player{i}" for i in range(4)]
+
+def determine_active_player(row):
+    for i, col in enumerate(player_cols):
+        if row[col] == 2:
+            return i
+    return np.nan
+
+df_players["ActivePlayer"] = df_players.apply(determine_active_player, axis=1)
+df_players = df_players[df_players["ActivePlayer"].isin([0, 1, 2, 3])]
+
+df_players["Turn"] = pd.to_numeric(df_players["Turn"], errors="coerce")
+df_players = df_players.dropna(subset=["Turn"])
+df_players["Turn"] = df_players["Turn"].astype(int)
+
+for m in metrics_player:
+    df_players[m] = pd.to_numeric(df_players[m], errors="coerce")
+
+df_cities["Turn"] = pd.to_numeric(df_cities["Turn"], errors="coerce")
+df_cities = df_cities.dropna(subset=["Turn"])
+df_cities["Turn"] = df_cities["Turn"].astype(int)
+
+city_player_cols = [f"Player{i}" for i in range(4)]
+
+def get_city_owner(row):
+    for i, col in enumerate(city_player_cols):
+        if col in row and row[col] == 1:
+            return i
+    return np.nan
+
+df_cities["OwnerID"] = df_cities.apply(get_city_owner, axis=1)
+
+city_yields = (
+    df_cities
+    .groupby(["Turn", "OwnerID"])[[
+        "Population", "FoodPerTurn", "ProductionPerTurn",
+        "GoldPerTurn", "SciencePerTurn", "CulturePerTurn",
+        "FaithPerTurn", "TourismPerTurn",
+        "BuildingCount", "WonderCount"
+    ]]
+    .mean()
+    .reset_index()
+)
+
+city_yields = city_yields.dropna(subset=["OwnerID"])
+city_yields["OwnerID"] = city_yields["OwnerID"].astype(int)
 ```
 
-# Using Quarto for presentations
+## Research Question
+::::: columns
 
-## Quarto
+How does a LLM perform against the base AI in Civilization 5?
 
--   The presentation is created using the Quarto CLI
+-   Can the LLM's strategy change be detected
+-   What causes the change in strategy
+:::
 
--   `##` sets the start of a new slide
 
-## Layouts
-
-You can use plain text
-
+## Dataset Overview
 ::: columns
-::: {.column width="40%"}
--   or bullet points[^1]
+::: column
+### About the Dataset
+
+- Dataset of one gameplay instance between 1 LLM and 3 in-game AIs  
+- Analysis focuses on player- and city-level resources over turns  
+- Turn-based summaries are built per player and merged with city yields  
+
 :::
 
-::: {.column width="60%"}
-or in two columns
-:::
-:::
-
-[^1]: And add footnotes
-
--   like
-
--   this
-
-## Code
-
+::: column
+### PlayerSummaries Columns
 ```{python}
-from sklearn.linear_model import LinearRegression
-import statsmodels.api as sm
-import pandas as pd
-
-# Fit a linear regression model
-X = mtcars[['speed']]
-y = mtcars['mpg']
-model = LinearRegression().fit(X, y)
-
-# Summary of the model
-X2 = sm.add_constant(X)
-est = sm.OLS(y, X2)
-est2 = est.fit()
-print(est2.summary())
+cols = df_players.columns.tolist()
+cols[:5] + ["..."] + cols[-5:]
 ```
 
-## Plots
+### CityInformation Columns
+```{python}
+cols = df_cities.columns.tolist()
+cols[:5] + ["..."] + cols[-5:]
+```
+:::
+:::
+
+
+# Heatmap
+
+HeatMap:
+
+-   To quickly view what each player chose to focus on in their gameplay
+-   _x values are per player metrics
+-   _y values are city level metrics
+-   Similarities between the LLM and in game AI arise in happiness
+-   Likewise we see Player0(LLM) placed a larger focus on their per turn output
+
+# Heatmap Plot
 
 ```{python}
-penguins['species'] = penguins['species'].apply(lambda x: "Adelie" if x == "Adelie" else "Other")
-sns.scatterplot(data=penguins, x='flipper_length_mm', y='body_mass_g', hue='species')
+merged = pd.merge(
+    df_players,
+    city_yields,
+    left_on=["Turn", "ActivePlayer"],
+    right_on=["Turn", "OwnerID"],
+    how="left"
+)
+
+valid_players = sorted(df_players["ActivePlayer"].dropna().unique())
+df_filtered = merged[merged["ActivePlayer"].isin(valid_players)].copy()
+
+cols_to_drop = [
+    c for c in df_filtered.columns 
+    if c.startswith("Player") and int(c.replace("Player", "")) not in valid_players
+]
+df_filtered = df_filtered.drop(columns=cols_to_drop)
+
+keep_cols = [
+    "Player0", "Player1", "Player2", "Player3", "Turn",
+    "Score", "Cities", "Population", "Territory",
+    "Gold", "GoldPerTurn_x", "HappinessPercentage",
+    "SciencePerTurn_x", "CulturePerTurn_x", "FaithPerTurn",
+    "TourismPerTurn", "Technologies",
+    "FoodPerTurn", "ProductionPerTurn", "GoldPerTurn_y",
+    "SciencePerTurn_y", "CulturePerTurn_y", "FaithPerTurn_y",
+    "TourismPerTurn_y", "BuildingCount", "WonderCount"
+]
+
+df_corr = df_filtered[[c for c in keep_cols if c in df_filtered.columns]].select_dtypes("number").corr()
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(df_corr, cmap="coolwarm", annot=False)
+plt.title("Correlation Heatmap All Players")
+plt.tight_layout()
 plt.show()
 ```
 
-## Plot and text
 
-::: columns
-::: {.column width="50%"}
--   Some text
+# Cities Controlled Per Turn
 
--   goes here
-:::
-
-::: {.column width="50%"}
 ```{python}
-#| warning: false
-#| fig.width: 5.5
-fig, ax = plt.subplots(figsize=(5.5, 5.5 * 0.618))
-sns.boxplot(data=penguins, x='bill_length_mm', y='species', hue='species', ax=ax)
+city_turn = df_cities.copy()
+city_turn["Turn"] = pd.to_numeric(city_turn["Turn"], errors="coerce")
+city_turn = city_turn.dropna(subset=["Turn"])
+city_turn["Turn"] = city_turn["Turn"].astype(int)
+
+city_unique = city_turn.drop_duplicates(subset=["Turn", "Name", "Owner"])
+
+cities_per_turn = (
+    city_unique.groupby(["Turn", "Owner"])
+               .size()
+               .reset_index(name="CityCount")
+)
+
+plt.figure(figsize=(10, 6))
+sns.lineplot(data=cities_per_turn, x="Turn", y="CityCount", hue="Owner")
+plt.title("Cities Controlled Per Turn")
+plt.tight_layout()
 plt.show()
 ```
-:::
-:::
 
-# A new section...
 
-## Tables
+# Player 0 Clustering Timeline
 
-If you want to generate a table, make sure it is in the HTML format (instead of Markdown or other formats), e.g.,
 
 ```{python}
-penguins.head().to_html()
+metrics_cluster = [
+    "Cities",
+    "Population_x",
+    "Territory",
+    "GoldPerTurn_x",
+    "SciencePerTurn_x",
+    "CulturePerTurn_x",
+    "FaithPerTurn_x",
+    "FoodPerTurn",
+    "ProductionPerTurn",
+    "GoldPerTurn_y",
+    "SciencePerTurn_y",
+    "CulturePerTurn_y",
+    "FaithPerTurn_y",
+    "TourismPerTurn_y",
+    "BuildingCount",
+    "WonderCount"
+]
+
+def build_player_turn_table(player_id, merged_df, metrics):
+    df_p = merged_df[merged_df["ActivePlayer"] == player_id].copy()
+    existing = [m for m in metrics if m in df_p.columns]
+    df_turn = (
+        df_p.groupby("Turn")[existing]
+            .mean()
+            .reset_index()
+    )
+    df_turn["Player"] = player_id
+    df_turn = df_turn.fillna(0)
+    return df_turn
+
+player_tables = []
+for p in [0, 1, 2, 3]:
+    df_player = build_player_turn_table(p, merged, metrics_cluster)
+    player_tables.append(df_player)
+
+df_all_players = pd.concat(player_tables, ignore_index=True)
+
+def cluster_player(df_player, metrics, k=4):
+    X = df_player[metrics].values
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    kmeans = KMeans(n_clusters=k, n_init=20, random_state=42)
+    df_player["Cluster"] = kmeans.fit_predict(X_scaled)
+    return df_player, kmeans, X_scaled
+
+df_p0 = df_all_players[df_all_players["Player"] == 0].copy()
+df_p0, kmeans_p0, X_scaled_p0 = cluster_player(df_p0, metrics_cluster, k=4)
+
+plt.figure(figsize=(9, 4))
+plt.plot(df_p0["Turn"], df_p0["Cluster"], marker="o", linewidth=1)
+plt.title("Behavioral State Timeline – LLM Player")
+plt.xlabel("Turn")
+plt.ylabel("Cluster")
+plt.tight_layout()
+plt.show()
 ```
 
-## Images
+# Player 0 Radar Chart
+::: {.r-fit-text}
+::: columns
+Radar Chart:
 
-![Image credit: Danielle Navarro, Percolate.](images/watercolour_sys02_img34_teacup-ocean.png){fig-align="center" width="500"}
+* The radar chart shows what the LLM focused on as its strategy altered
+* We see a very generic approach at the start which then moves into a more focus approach on generating gold and city expansion
+* In cluster 2 we see a complete pivot to a wonder based victory
+* Cluster 3 shows a push towards all except gold generation
+:::
+:::
 
-## Math Expressions {.smaller}
+Cluster 3 occurs during the sudden shift in city control as the LLM begins loosing control of Cities
+We see this reflected in its sudden push for maximal output on all fronts except for gold generation as its city count dwindles 
 
-You can write LaTeX math expressions inside a pair of dollar signs, e.g. \$\\alpha+\\beta\$ renders $\alpha + \beta$. You can use the display style with double dollar signs:
+# Player 0 Radar Chart Plot
 
-```         
-$$\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i$$
+```{python}
+centroids = kmeans_p0.cluster_centers_
+centroids_df = pd.DataFrame(centroids, columns=metrics_cluster)
+
+centroids_norm = (centroids_df - centroids_df.min()) / (centroids_df.max() - centroids_df.min())
+
+categories = list(centroids_norm.columns)
+N = len(categories)
+
+angles = np.linspace(0, 2 * np.pi, N, endpoint=False).tolist()
+angles += angles[:1]
+
+plt.figure(figsize=(10, 10))
+plt.suptitle("Player 0 – Cluster Profiles (Radar Chart)", fontsize=16)
+
+for idx in range(len(centroids_norm)):
+    values = centroids_norm.iloc[idx].tolist()
+    values += values[:1]
+    ax = plt.subplot(2, 2, idx + 1, polar=True)
+    ax.plot(angles, values, linewidth=2, label=f"Cluster {idx}")
+    ax.fill(angles, values, alpha=0.25)
+    ax.set_title(f"Cluster {idx}", size=14)
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=8)
+    ax.set_yticklabels([])
+
+plt.tight_layout()
+plt.show()
 ```
+# Conclusions
 
-$$
-\bar{X}=\frac{1}{n}\sum_{i=1}^nX_i
-$$
+::: {.r-fit-text}
+::::: columns
 
-Limitations:
+* This provides an excellent starting space in determining how the LLM's behavior changed over turns and understanding when exactly these changes occured.
+* LLM responses are logged at appropriate turns, while these are all random text responses, using the clustering we can correlate these to ensure they align. For example at the 150 mark we see a response logged that it has in fact changed its strategy.
+* From this I believe a model can be formed to predict how the LLM will perform based on frequency of switching clusters and resources favored  
+:::::
+:::
 
-1.  The source code of a LaTeX math expression must be in one line, unless it is inside a pair of double dollar signs, in which case the starting `$$` must appear in the very beginning of a line, followed immediately by a non-space character, and the ending `$$` must be at the end of a line, led by a non-space character;
-
-2.  There should not be spaces after the opening `$` or before the closing `$`.
-
-# Wrap up
-
-## Feeling adventurous?
-
--   You are welcomed to use the default styling of the slides. In fact, that's what I expect majority of you will do. You will differentiate yourself with the content of your presentation.
-
--   But some of you might want to play around with slide styling. Some solutions for this can be found at https://quarto.org/docs/presentations/revealjs.

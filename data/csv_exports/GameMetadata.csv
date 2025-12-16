@@ -1,0 +1,20 @@
+Key,Value
+gameId,02b369b7-c039-4c04-8221-09bd8871b5df
+lastSync,1761648683265
+gameSpeed,Standard
+mapType,Vox_Deorum
+mapSize,Tiny
+difficulty,Prince
+startEra,Ancient Era
+maxTurns,500
+victoryTypes,"Time, Science, Domination, Cultural, Diplomatic"
+experiment,simple-strategist
+strategist-0,simple-strategist
+lastID,347000415
+turn,346
+lastSave,1761658760733
+victoryPlayerID,2.0
+victoryType,Cultural
+inputTokens-0,10082402
+reasoningTokens-0,0
+outputTokens-0,240869

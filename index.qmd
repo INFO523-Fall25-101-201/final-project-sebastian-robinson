@@ -1,11 +1,11 @@
 ---
-title: "Project Title"
+title: "LLM AI vs In Game AI Performance"
 subtitle: "INFO 523 - Final Project"
 author: 
-  - name: "Team name - Team member 1, Team member 2,..."
+  - name: "Sebastian Robinson(Solo)"
     affiliations:
       - name: "College of Information Science, University of Arizona"
-description: "Project description"
+description: "LLM AI vs Base Game AI in CIV 5"
 format:
    html:
     code-tools: true
@@ -20,4 +20,4 @@ jupyter: python3
 
 ## Abstract
 
-Add project abstract here.
+Civilization V is a video game in which the player must explore and build their empire in a randomly generated map. There are many paths to victory including through conquest, construction, diplomacy and many more. With so many paths to pick from a user’s strategy can remain fluid, adapting rapidly based on their surroundings. This project aims to explore how we can determine these strategy changes and the reason for its change.
