@@ -19,7 +19,7 @@ The goal of this project is to identify when the LLM makes a change in its strat
 
 ## Datasets
 
-The datasets are courtesy of Dr. Chen and an ongoing look into LLM gameplay.
+The datasets are courtesy of Dr. Chen and his on going research into LLM self play.
 
 #### PlayerSummaries
 
@@ -75,7 +75,7 @@ The datasets are courtesy of Dr. Chen and an ongoing look into LLM gameplay.
 
 -   Left data in the file and focused on establishing a dictionary of data fields interested in.
 
--   Tourism per turn was omitted as the LLM never used it, this can skew strategy analysis and reasoning, however the focus is on the LLM alone.
+-   Tourism per turn was omitted as the LLM never used it. Removing this can skew strategy analysis and reasoning across all players, however the focus is on the LLM alone.
 
 ### Exploratory Data Analysis (EDA)
 
@@ -97,9 +97,11 @@ The datasets are courtesy of Dr. Chen and an ongoing look into LLM gameplay.
 
 -   I found radar charts using the normalized centroid of each cluster to be both a fun and an informative way to display how each resource is favored.
 
--   An additional file StrategyChanges.csv allows the LLM to log responses when they make tweaks or notes on their current strategy, all responses are random inn structure making it difficult to interpret if its made a strategy change. However through visual inspection of our cluster vs turn chart at around the ~150 turn mark the strategy is adjusted. Looking at the notes logged around this turn we find at turn 151 "Pivoting strategy following peace treaty with Korea. Maintaining Conquest as grand strategy but adjusting military..." showing our clustering directly detect when a strategy has changed.
+-   An additional file StrategyChanges.csv allows the LLM to log responses when they make tweaks or notes on their current strategy, all responses are random in structure making it difficult to detect that they are making a change in strategy. However through visual inspection of our cluster vs turn chart at around the ~150 turn mark the strategy is adjusted. Looking at the notes logged around this turn we find at turn 151 "Pivoting strategy following peace treaty with Korea. Maintaining Conquest as grand strategy but adjusting military..." showing our clustering directly detect when a strategy has changed.
 
--   I believe the model can be further tuned based on the "rubber banding" seen in the behavioral chart. Bringing in other critical information from the larger dataset such as PersonaChange metrics which holds numeric values for how the LLM favors certain many factors such as warbias or deceptiveness .
+-   Along with visual inspections at the remaing clusters we see they all correlate closely with a strategy change
+
+-   I believe the model can be further tuned based on the "rubber banding" seen in the behavioral chart. Bringing in other critical information from the larger dataset such as PersonaChange metrics which holds numeric values for how the LLM favors certain many factors such as warbias or deceptiveness.
 
 ## Code
 
