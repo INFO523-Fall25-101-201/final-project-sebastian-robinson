@@ -43,6 +43,8 @@ BASE_DIR = os.getcwd()
 
 ## Dataset
 
+The Dataset is composed of 2 files, the PlayerSummaries.csv contains the total count of various resources for each player per turn. The CityInformations.csv contains various per city statistics, such as population, food, gold generation. Together we can view how the player amasses their resources to fuel their strategy towards victory.
+
 ```{python}
 #| label: load-dataset
 #| message: false
@@ -102,7 +104,7 @@ for m in metrics:
     df_playerSummaries[m] = pd.to_numeric(df_playerSummaries[m], errors="coerce")
 
 def plot_metric(df, metric, use_scatter=False):
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(6, 5))
     
     for player in sorted(df["ActivePlayer"].unique()):
         sub = df[df["ActivePlayer"] == player]
