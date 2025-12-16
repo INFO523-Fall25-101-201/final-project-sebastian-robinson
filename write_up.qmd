@@ -1,0 +1,108 @@
+---
+title: Final Project Write Up
+subtitle: INFO 523
+format:
+   html:
+    code-tools: true
+    code-overflow: wrap
+    embed-resources: true
+editor: visual
+execute:
+  warning: false
+  echo: false
+jupyter: python3
+---
+
+## Introduction
+
+The goal of this project is to identify when the LLM makes a change in its strategy. To achieve this, we analyze the per turn metrics of each player and how they change along with the cities, how ownership changes and the focused contribution from each of these. Clustering these changes to see what patterns emerge. The following write up will go over the dataset, points of interest in initial mining and evaluation.
+
+## Datasets
+
+The datasets are courtesy of Dr. Chen and an ongoing look into LLM gameplay.
+
+#### PlayerSummaries
+
+`Turn` - Turn Identifier
+
+`Player0` - LLM controlled player
+
+`Player1 - Player3` - Base game AI controlled players
+
+`Cities` - Number of cities controlled
+
+`Population` - Total player population
+
+`Territory` - Total amount of land controlled
+
+`Gold` - Total gold held
+
+`GoldPerTurn` - Gold per turn production
+
+`CutlturePerTurn` - Culture per turn production
+
+`FaithPerTurn` - Faith per turn production
+
+#### CityInformations.csv:
+
+`Turn` - Turn Identifier
+
+`Player0` - LLM controlled player
+
+`Player1 - Player3` - Base game AI controlled players
+
+`Owner` - Who presently controls the city
+
+`Name` - City name
+
+`Population` - Total player population
+
+`Territory` - Total amount of land controlled
+
+`Gold` - Total gold held
+
+`GoldPerTurn` - Gold per turn production
+
+`CutlturePerTurn` - Culture per turn production
+
+`FaithPerTurn` - Faith per turn production
+
+## Mining Methods and Data Originization Methedology
+
+### Data Cleaning
+
+-   Cleaned data types to ensure compatibility between the two datasets.
+
+-   Left data in the file and focused on establishing a dictionary of data fields interested in.
+
+-   Tourism per turn was omitted as the LLM never used it, this can skew strategy analysis and reasoning, however the focus is on the LLM alone.
+
+### Exploratory Data Analysis (EDA)
+
+-   Found all players ignored happiness and only addressed it when it became critical.
+
+-   Merged datasets based on turn, activeplayer into one, per turn names are shared between the two, however they convey different  meanings, _x and _y are used to identify per player level and city level metrics.
+
+-   Utilized heatmaps to quickly identify favored resources per player.
+
+### Modeling Decisions
+
+-   Clustered user level (_x) metrics between 4 clusters.
+
+-   Placed clustering levels across turns finding direct connection to resource changes and cluster changes across turn.
+
+-   Per city metrics include a hidden player known as city_states, these are lesser in game AI controlled players with limited actions, these players and their cities were removed from all modeling.
+
+### Evaluation
+
+-   I found radar charts using the normalized centroid of each cluster to be both a fun and an informative way to display how each resource is favored.
+
+-   An additional file StrategyChanges.csv allows the LLM to log responses when they make tweaks or notes on their current strategy, all responses are random inn structure making it difficult to interpret if its made a strategy change. However through visual inspection of our cluster vs turn chart at around the ~150 turn mark the strategy is adjusted. Looking at the notes logged around this turn we find at turn 151 "Pivoting strategy following peace treaty with Korea. Maintaining Conquest as grand strategy but adjusting military..." showing our clustering directly detect when a strategy has changed.
+
+-   I believe the model can be further tuned based on the "rubber banding" seen in the behavioral chart. Bringing in other critical information from the larger dataset such as PersonaChange metrics which holds numeric values for how the LLM favors certain many factors such as warbias or deceptiveness .
+
+## Code
+
+A full notebook of the code can be found on the main level of the repo titled final_project.ipynb, including additional charts and analysis.
+
+~AI\ Disclosure:\ AI\ was\ used\ to\ assist\ in\ chart\ ideas\ and\ noting\ the\ code.~

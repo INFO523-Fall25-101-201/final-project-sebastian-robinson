@@ -1,11 +1,11 @@
 ---
-title: "Proposal title"
+title: "How Do LLM Models Play Against Base Game AI"
 subtitle: "Proposal"
 author: 
   - name: "Sebastian Robinson (Solo)"
     affiliations:
       - name: "College of Information Science, University of Arizona"
-description: "Project description"
+description: "Analysis of per turn gameplay to understand how and when a LLM will change its strategy."
 format:
   html:
     code-tools: false
@@ -130,10 +130,12 @@ for metric in metrics:
 ```
 ## Questions
 
-What events influnce LLM strategies
-How does LLM adapt to the changing environment of the game.
+How does a LLM perform against the base AI in Civilization 5?
+
+-   Can the LLM's strategy change be detected
+-   What causes the change in strategy
 
 ## Analysis plan
 
 Utilizing the PlayerSummaries and CityInformation datasets I will analyze when the LLM changes its strategies, how these strategies change over time and what caused them to change their strategy
-I will use the LLM's own recording of its reasoning found in PersonaChanges to validate I have correctly identified a strategy pivot
+I will use the LLM's own recording of its reasoning found in PersonaChanges.csv to validate I have correctly identified a strategy pivot
