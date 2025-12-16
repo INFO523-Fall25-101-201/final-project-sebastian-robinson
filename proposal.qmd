@@ -16,7 +16,7 @@ editor: source
 code-annotations: false
 execute:
   echo: false
-  out-width: "90%"
+  out-width: "70%"
   results: hide
   warning: false
   message: false
